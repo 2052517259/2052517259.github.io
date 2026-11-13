@@ -8,7 +8,9 @@
 *{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;-webkit-tap-highlight-color:transparent}
 body{background:#161616;color:#eee;padding:18px;max-width:460px;margin:0 auto;min-height:100vh}
 .card{background:#232323;padding:22px;border-radius:16px;box-shadow:0 4px 16px rgba(0,0,0,.4)}
-h2{color:#ff7b26;text-align:center;margin-bottom:18px;font-size:20px}
+h2{color:#ff7b26;text-align:center;margin-bottom:6px;font-size:20px}
+.update{text-align:center;color:#888;font-size:12px;margin-bottom:16px}
+.update b{color:#4ade80;font-weight:400}
 .item{margin-bottom:14px}
 label{display:block;margin-bottom:6px;color:#bbb;font-size:14px}
 input{width:100%;padding:12px 14px;border:1px solid #3a3a3a;border-radius:10px;background:#2e2e2e;color:#fff;font-size:17px;outline:none}
@@ -32,23 +34,22 @@ button.reset{background:#444;color:#ccc;margin-top:8px;font-weight:400}
 <body>
 <div class="card">
   <h2>🏍️ 摩托油耗计算器</h2>
+  <div class="update">油价更新：<b id="updatetime">加载中...</b></div>
 
   <div class="item">
     <label>本次行驶里程（km）</label>
     <input id="mile" type="number" step="0.01" placeholder="例：180">
   </div>
-
   <div class="item">
     <label>本次消耗油量（L）</label>
     <input id="oil" type="number" step="0.01" placeholder="例：8.2">
   </div>
-
   <div class="item">
-    <label>选择油号（浙江中石化实时价）</label>
+    <label>选择油号（浙江实时油价）</label>
     <div class="oil-types">
-      <label id="l92"><input type="radio" name="oiltype" value="8.34">92号<span class="price">8.34元/L</span></label>
-      <label id="l95" class="active"><input type="radio" name="oiltype" value="8.87" checked>95号<span class="price">8.87元/L</span></label>
-      <label id="l98"><input type="radio" name="oiltype" value="10.42">98号<span class="price">10.42元/L</span></label>
+      <label id="l92"><input type="radio" name="oiltype" value="8.34">92号<span class="price" id="p92">8.34元/L</span></label>
+      <label id="l95" class="active"><input type="radio" name="oiltype" value="8.87" checked>95号<span class="price" id="p95">8.87元/L</span></label>
+      <label id="l98"><input type="radio" name="oiltype" value="10.87">98号<span class="price" id="p98">10.87元/L</span></label>
     </div>
   </div>
 
@@ -74,7 +75,35 @@ let totalMile = parseFloat(localStorage.getItem('f_mile'))||0;
 let totalCost = parseFloat(localStorage.getItem('f_cost'))||0;
 let totalOil  = parseFloat(localStorage.getItem('f_oil'))||0;
 
-// 油号选中样式
+// 拉取浙江实时油价
+async function loadPrice(){
+  try{
+    const res = await fetch('https://cn.apihz.cn/api/jinrong/youjia.php?id=88888888&key=88888888&sheng='+encodeURIComponent('浙江'));
+    const j = await res.json();
+    if(j.code===200){
+      const d = j.data.data1;
+      const p92 = d['92'], p95 = d['95'], p98 = d['98'] || d['ap98'];
+      if(p92) setPrice(92,p92);
+      if(p95) setPrice(95,p95);
+      if(p98) setPrice(98,p98);
+      $('updatetime').innerText = (j.date||'')+'（实时）';
+      $('updatetime').style.color='#4ade80';
+    }else{
+      throw new Error('bad');
+    }
+  }catch(e){
+    $('updatetime').innerText = '实时油价获取失败，使用缓存价';
+    $('updatetime').style.color='#fbbf24';
+  }
+}
+function setPrice(n,v){
+  document.getElementById('p'+n).innerText = Number(v).toFixed(2)+'元/L';
+  document.querySelector('input[name="oiltype"][value]') &&
+  document.querySelectorAll('input[name="oiltype"]').forEach(r=>{
+    if(r.closest('label').id==='l'+n) r.value = Number(v);
+  });
+}
+
 document.querySelectorAll('input[name="oiltype"]').forEach(r=>{
   r.onchange=()=>{
     document.querySelectorAll('.oil-types label').forEach(l=>l.classList.remove('active'));
@@ -88,14 +117,10 @@ function calc(){
   const mile=parseFloat($('mile').value);
   const oil=parseFloat($('oil').value);
   const price=parseFloat(document.querySelector('input[name="oiltype"]:checked').value);
-  const tip=$('tip');
-  tip.style.display='none';
+  const tip=$('tip'); tip.style.display='none';
   if(isNaN(mile)||isNaN(oil)||mile<=0||oil<=0){tip.style.display='block';return}
 
-  const hundred = oil/mile*100;
-  const perKm = oil*price/mile;
-  const cost = oil*price;
-
+  const hundred=oil/mile*100, perKm=oil*price/mile, cost=oil*price;
   totalMile+=mile; totalOil+=oil; totalCost+=cost;
   localStorage.setItem('f_mile',totalMile);
   localStorage.setItem('f_oil',totalOil);
@@ -110,11 +135,13 @@ function calc(){
 }
 
 function resetAll(){
-  localStorage.removeItem('f_mile');localStorage.removeItem('f_oil');localStorage.removeItem('f_cost');
+  ['f_mile','f_oil','f_cost'].forEach(k=>localStorage.removeItem(k));
   totalMile=totalOil=totalCost=0;
   $('mile').value='';$('oil').value='';
   ['r1','r2','r3','r4','r5','r6'].forEach(id=>$(id).innerText='--');
 }
+
+loadPrice();
 </script>
 </body>
 </html>
