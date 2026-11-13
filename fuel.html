@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>摩托油耗计算器</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;}
+body{padding:20px;background:#f4f5f7;max-width:440px;margin:0 auto;}
+.card{background:#ffffff;border-radius:14px;padding:22px;box-shadow:0 2px 10px rgba(0,0,0,0.08);}
+.form-item{margin-bottom:16px;}
+.form-item label{display:block;margin-bottom:6px;color:#222;font-size:15px;}
+.form-item input{width:100%;padding:12px 14px;border:1px solid #e5e7eb;border-radius:10px;font-size:17px;outline:none;}
+.form-item input:focus{border-color:#3b82f6;}
+.btn-row{display:flex;gap:12px;margin-top:8px;}
+button{flex:1;padding:13px;border:none;border-radius:10px;font-size:16px;cursor:pointer;}
+#calc{background:#2563eb;color:#fff;}
+#reset{background:#888888;color:#fff;}
+.result-box{margin-top:20px;padding:16px;background:#f1f5ff;border-radius:10px;line-height:1.7;white-space:pre-line;font-size:15px;color:#1f2937;}
+</style>
+</head>
+<body>
+<div class="card">
+  <div class="form-item">
+    <label>行驶里程(km)</label>
+    <input id="mile" type="number" step="0.01" placeholder="例如：75">
+  </div>
+  <div class="form-item">
+    <label>消耗油量(L)</label>
+    <input id="oil" type="number" step="0.01" placeholder="例如：4.5">
+  </div>
+  <div class="form-item">
+    <label>油价(元/L)</label>
+    <input id="price" type="number" step="0.01" placeholder="例如：8.87">
+  </div>
+  <div class="btn-row">
+    <button id="calc">计算并累加</button>
+    <button id="reset">重置统计</button>
+  </div>
+  <div class="result-box" id="result">计算结果展示在这里</div>
+</div>
+
+<script>
+// 读取本地缓存
+let totalMileage = parseFloat(localStorage.getItem('totalMileage')) || 0;
+let totalOil = parseFloat(localStorage.getItem('totalOil')) || 0;
+let totalMoney = parseFloat(localStorage.getItem('totalMoney')) || 0;
+
+const $ = s => document.querySelector(s);
+const resDom = $('#result');
+
+$('#calc').onclick = function () {
+  const mile = parseFloat($('#mile').value);
+  const oil = parseFloat($('#oil').value);
+  const price = parseFloat($('#price').value);
+
+  if (isNaN(mile) || isNaN(oil) || isNaN(price) || mile <= 0 || oil <= 0 || price <= 0) {
+    resDom.innerText = "⚠️ 请输入大于0的有效数字！";
+    return;
+  }
+
+  const hundredFuel = oil / mile * 100;
+  const perKmCost = (oil * price) / mile;
+  const thisCost = oil * price;
+
+  // 累加
+  totalMileage += mile;
+  totalOil += oil;
+  totalMoney += thisCost;
+
+  // 存入缓存
+  localStorage.setItem('totalMileage', totalMileage);
+  localStorage.setItem('totalOil', totalOil);
+  localStorage.setItem('totalMoney', totalMoney);
+
+  const avgHundred = totalOil / totalMileage * 100;
+
+  resDom.innerText =
+`【本次记录】
+百公里油耗：${hundredFuel.toFixed(2)} L/100km
+每公里油费：${perKmCost.toFixed(2)} 元/km
+本次油费：${thisCost.toFixed(2)} 元
+
+【累计统计】
+总里程：${totalMileage.toFixed(2)} km
+总耗油量：${totalOil.toFixed(2)} L
+总油费：${totalMoney.toFixed(2)} 元
+综合平均油耗：${avgHundred.toFixed(2)} L/100km`;
+}
+
+$('#reset').onclick = function () {
+  totalMileage = 0;
+  totalOil = 0;
+  totalMoney = 0;
+  localStorage.removeItem('totalMileage');
+  localStorage.removeItem('totalOil');
+  localStorage.removeItem('totalMoney');
+  $('#mile').value = '';
+  $('#oil').value = '';
+  $('#price').value = '';
+  resDom.innerText = "✅ 所有统计数据已清空！";
+}
+</script>
+</body>
+</html>
