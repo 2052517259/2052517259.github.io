@@ -1,64 +1,119 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>摩托油耗计算器</title>
-    <style>
-        *{box-sizing: border-box;margin:0;padding:0;font-family:system-ui}
-        body{background:#1a1a1a;color:#eee;padding:24px;max-width:500px;margin:0 auto}
-        .card{background:#272727;padding:24px;border-radius:16px}
-        h2{color:#ff7b26;margin-bottom:20px;text-align:center}
-        .item{margin-bottom:14px}
-        label{display:block;margin-bottom:6px;color:#ccc}
-        input{width:100%;padding:12px;border-radius:8px;border:none;background:#383838;color:#fff;font-size:16px}
-        .result{margin-top:20px;padding:16px;background:#333;border-radius:10px}
-        .res-item{margin:8px 0;font-size:17px}
-        .tip{color:#ff5555;font-size:14px;margin-top:10px;display:none}
-        button{width:100%;margin-top:14px;padding:12px;border:none;border-radius:8px;background:#ff7b26;color:#000;font-weight:bold;font-size:16px;cursor:pointer}
-    </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>摩托油耗计算器</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;-webkit-tap-highlight-color:transparent}
+body{background:#161616;color:#eee;padding:18px;max-width:460px;margin:0 auto;min-height:100vh}
+.card{background:#232323;padding:22px;border-radius:16px;box-shadow:0 4px 16px rgba(0,0,0,.4)}
+h2{color:#ff7b26;text-align:center;margin-bottom:18px;font-size:20px}
+.item{margin-bottom:14px}
+label{display:block;margin-bottom:6px;color:#bbb;font-size:14px}
+input{width:100%;padding:12px 14px;border:1px solid #3a3a3a;border-radius:10px;background:#2e2e2e;color:#fff;font-size:17px;outline:none}
+input:focus{border-color:#ff7b26}
+.oil-types{display:flex;gap:8px;margin-top:6px}
+.oil-types label{flex:1;display:flex;flex-direction:column;align-items:center;padding:10px 4px;border:2px solid #3a3a3a;border-radius:10px;cursor:pointer;color:#ccc;font-size:14px;transition:all .15s}
+.oil-types input{display:none}
+.oil-types label.active{border-color:#ff7b26;background:rgba(255,123,38,.12);color:#ff7b26}
+.oil-types .price{font-size:12px;color:#999;margin-top:3px}
+.oil-types label.active .price{color:#ffb37a}
+.result{margin-top:18px;padding:16px;background:#1c1c1c;border-radius:12px;line-height:1.9;font-size:15px}
+.result .row{display:flex;justify-content:space-between}
+.result .row span:last-child{color:#ff7b26;font-weight:600}
+.divider{height:1px;background:#333;margin:12px 0}
+.stat-title{color:#888;font-size:13px;margin-bottom:6px}
+button{width:100%;padding:13px;margin-top:14px;border:none;border-radius:10px;background:#ff7b26;color:#000;font-weight:700;font-size:16px;cursor:pointer}
+button.reset{background:#444;color:#ccc;margin-top:8px;font-weight:400}
+.tip{color:#ff5555;font-size:13px;margin-top:8px;display:none;text-align:center}
+</style>
 </head>
 <body>
-    <div class="card">
-        <h2>🏍️ 摩托油耗计算器</h2>
-        <div class="item">
-            <label>本次加油升数(L)</label>
-            <input type="number" id="oil" step="0.01" placeholder="例：8.2">
-        </div>
-        <div class="item">
-            <label>本次加油金额(元)</label>
-            <input type="number" id="money" step="0.01" placeholder="例：60">
-        </div>
-        <div class="item">
-            <label>两次加油之间行驶里程(km)</label>
-            <input type="number" id="km" step="0.01" placeholder="例：180">
-        </div>
-        <div class="tip" id="errTip">里程不能为0或负数！</div>
-        <div class="result" id="resultBox">
-            <div class="res-item">百公里油耗：<span id="fuel100">--</span> L/100km</div>
-            <div class="res-item">每公里花费：<span id="costKm">--</span> 元</div>
-            <div class="res-item">当前油价：<span id="price">--</span> 元/L</div>
-        </div>
-        <button onclick="calc()">计算油耗</button>
+<div class="card">
+  <h2>🏍️ 摩托油耗计算器</h2>
+
+  <div class="item">
+    <label>本次行驶里程（km）</label>
+    <input id="mile" type="number" step="0.01" placeholder="例：180">
+  </div>
+
+  <div class="item">
+    <label>本次消耗油量（L）</label>
+    <input id="oil" type="number" step="0.01" placeholder="例：8.2">
+  </div>
+
+  <div class="item">
+    <label>选择油号（浙江中石化实时价）</label>
+    <div class="oil-types">
+      <label id="l92"><input type="radio" name="oiltype" value="8.34">92号<span class="price">8.34元/L</span></label>
+      <label id="l95" class="active"><input type="radio" name="oiltype" value="8.87" checked>95号<span class="price">8.87元/L</span></label>
+      <label id="l98"><input type="radio" name="oiltype" value="10.42">98号<span class="price">10.42元/L</span></label>
     </div>
+  </div>
+
+  <div class="result" id="result">
+    <div class="stat-title">—— 本次记录 ——</div>
+    <div class="row"><span>百公里油耗</span><span id="r1">--</span></div>
+    <div class="row"><span>每公里油费</span><span id="r2">--</span></div>
+    <div class="row"><span>本次油费</span><span id="r3">--</span></div>
+    <div class="divider"></div>
+    <div class="stat-title">—— 累计统计 ——</div>
+    <div class="row"><span>总里程</span><span id="r4">--</span></div>
+    <div class="row"><span>总油费</span><span id="r5">--</span></div>
+    <div class="row"><span>综合油耗</span><span id="r6">--</span></div>
+  </div>
+
+  <div class="tip" id="tip">⚠️ 请输入大于0的里程和油量</div>
+  <button onclick="calc()">计算并累加</button>
+  <button class="reset" onclick="resetAll()">重置统计</button>
+</div>
 
 <script>
+let totalMile = parseFloat(localStorage.getItem('f_mile'))||0;
+let totalCost = parseFloat(localStorage.getItem('f_cost'))||0;
+let totalOil  = parseFloat(localStorage.getItem('f_oil'))||0;
+
+// 油号选中样式
+document.querySelectorAll('input[name="oiltype"]').forEach(r=>{
+  r.onchange=()=>{
+    document.querySelectorAll('.oil-types label').forEach(l=>l.classList.remove('active'));
+    r.closest('label').classList.add('active');
+  }
+});
+
+function $(id){return document.getElementById(id)}
+
 function calc(){
-    const oil = parseFloat(document.getElementById('oil').value);
-    const money = parseFloat(document.getElementById('money').value);
-    const km = parseFloat(document.getElementById('km').value);
-    const tip = document.getElementById('errTip');
-    tip.style.display = 'none';
-    if(isNaN(oil)||isNaN(money)||isNaN(km) || km <=0){
-        tip.style.display='block';
-        return;
-    }
-    const fuel100 = (oil / km * 100).toFixed(2);
-    const costKm = (money / km).toFixed(2);
-    const price = (money / oil).toFixed(2);
-    document.getElementById('fuel100').innerText = fuel100;
-    document.getElementById('costKm').innerText = costKm;
-    document.getElementById('price').innerText = price;
+  const mile=parseFloat($('mile').value);
+  const oil=parseFloat($('oil').value);
+  const price=parseFloat(document.querySelector('input[name="oiltype"]:checked').value);
+  const tip=$('tip');
+  tip.style.display='none';
+  if(isNaN(mile)||isNaN(oil)||mile<=0||oil<=0){tip.style.display='block';return}
+
+  const hundred = oil/mile*100;
+  const perKm = oil*price/mile;
+  const cost = oil*price;
+
+  totalMile+=mile; totalOil+=oil; totalCost+=cost;
+  localStorage.setItem('f_mile',totalMile);
+  localStorage.setItem('f_oil',totalOil);
+  localStorage.setItem('f_cost',totalCost);
+
+  $('r1').innerText=hundred.toFixed(2)+' L';
+  $('r2').innerText=perKm.toFixed(2)+' 元';
+  $('r3').innerText=cost.toFixed(2)+' 元';
+  $('r4').innerText=totalMile.toFixed(2)+' km';
+  $('r5').innerText=totalCost.toFixed(2)+' 元';
+  $('r6').innerText=(totalOil/totalMile*100).toFixed(2)+' L';
+}
+
+function resetAll(){
+  localStorage.removeItem('f_mile');localStorage.removeItem('f_oil');localStorage.removeItem('f_cost');
+  totalMile=totalOil=totalCost=0;
+  $('mile').value='';$('oil').value='';
+  ['r1','r2','r3','r4','r5','r6'].forEach(id=>$(id).innerText='--');
 }
 </script>
 </body>
